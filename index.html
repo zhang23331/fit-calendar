@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>减重记录 · 我的健康日历</title>
+<style>
+  :root{
+    --primary:#6366f1;
+    --primary-dark:#4f46e5;
+    --primary-soft:#eef2ff;
+    --text:#1e293b;
+    --muted:#94a3b8;
+    --line:#e8edf5;
+    --card:#ffffff;
+    --sport:#10b981;
+    --sport-dark:#047857;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:linear-gradient(165deg,#eef2ff 0%,#f8fafc 45%,#ecfdf5 100%);
+    min-height:100vh;
+    color:var(--text);
+    padding:26px 16px 60px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{ max-width:760px; margin:0 auto; display:flex; flex-direction:column; gap:18px; }
+
+  .header{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:0 4px; flex-wrap:wrap; }
+  .header-left h1{ font-size:24px; letter-spacing:.5px; }
+  .header-left h1 span{ font-size:22px; }
+  .header-left .sub{ font-size:13px; color:var(--muted); margin-top:4px; }
+  .header-right{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .year-badge{
+    background:#fff; color:var(--primary); font-weight:700; font-size:14px;
+    padding:7px 16px; border-radius:999px; box-shadow:0 4px 14px rgba(99,102,241,.14);
+  }
+  .btn-io{
+    display:inline-flex; align-items:center; gap:5px;
+    border:1px solid #c7d2fe; background:#fff; color:var(--primary-dark);
+    font-size:13px; font-weight:700; font-family:inherit;
+    padding:7px 14px; border-radius:999px; cursor:pointer;
+    transition:.18s; white-space:nowrap;
+    box-shadow:0 3px 10px rgba(99,102,241,.10);
+  }
+  .btn-io:hover{ background:var(--primary-soft); border-color:#a5b4fc; transform:translateY(-1px); }
+  .btn-io:active{ transform:translateY(0); }
+  .btn-io.excel{ background:linear-gradient(135deg,#10b981,#34d399); color:#fff; border-color:transparent; }
+  .btn-io.excel:hover{ filter:brightness(1.06); border-color:transparent; }
+  .btn-io[disabled]{ opacity:.6; cursor:wait; }
+
+  .overview{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+  .stat-item{
+    background:var(--card); border-radius:16px; padding:14px 8px 13px;
+    box-shadow:0 8px 28px rgba(15,23,42,.07); text-align:center;
+    display:flex; flex-direction:column; align-items:center; gap:7px;
+    position:relative; overflow:hidden; transition:transform .18s, box-shadow .18s;
+  }
+  .stat-item::before{
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg,#6366f1,#8b5cf6); opacity:.85;
+  }
+  .stat-item:hover{ transform:translateY(-2px); box-shadow:0 12px 32px rgba(15,23,42,.11); }
+  .stat-label{ font-size:12px; color:var(--muted); font-weight:600; letter-spacing:.3px; }
+  .stat-value{
+    font-size:21px; font-weight:800; line-height:1;
+    color:var(--primary-dark); letter-spacing:-.5px; font-variant-numeric:tabular-nums;
+  }
+  .stat-value small{ font-size:11px; font-weight:700; color:var(--muted); margin-left:2px; letter-spacing:0; }
+  .stat-value.up{ color:#ef4444; }
+  .stat-value.down{ color:#10b981; }
+  .stat-value.none{ color:#cbd5e1; font-weight:700; font-size:18px; }
+
+  .card{ background:var(--card); border-radius:20px; padding:18px; box-shadow:0 8px 28px rgba(15,23,42,.07); }
+
+  .cal-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .selectors{ display:flex; gap:8px; flex-wrap:wrap; }
+  .pill-select{
+    width:auto; appearance:none; -webkit-appearance:none;
+    padding:9px 34px 9px 16px; border-radius:999px; border:1px solid #c7d2fe;
+    background-color:var(--primary-soft); color:var(--primary-dark);
+    font-size:14px; font-weight:700; font-family:inherit; cursor:pointer;
+    outline:none; transition:.18s;
+    background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236366f1' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat:no-repeat; background-position:right 13px center;
+  }
+  .pill-select:hover{ background-color:#e0e7ff; }
+  .stats{ font-size:13px; color:#64748b; }
+  .stats b{ color:var(--primary-dark); }
+  .stats .up{ color:#ef4444; font-weight:700; }
+  .stats .down{ color:#10b981; font-weight:700; }
+
+  .weekdays{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:6px; }
+  .weekdays span{ text-align:center; font-size:12px; color:var(--muted); font-weight:600; padding:6px 0; }
+  .weekdays span:first-child,.weekdays span:last-child{ color:#cbd5e1; }
+
+  .days{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .day{
+    position:relative; min-height:62px; padding:4px;
+    border:1px solid transparent; border-radius:13px; background:#f8fafc;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    font-family:inherit; font-size:14px; color:var(--text);
+    cursor:pointer; transition:transform .15s, background .15s, border-color .15s, box-shadow .15s;
+  }
+  .day:hover{ background:#eef2ff; border-color:#c7d2fe; transform:translateY(-2px); }
+  .day .num{ line-height:1; font-weight:500; }
+  .day .wt{ font-size:11px; font-weight:700; color:var(--primary); line-height:1; }
+  .day .dot{ width:6px; height:6px; border-radius:50%; background:var(--primary); }
+  .day.muted{ background:transparent; color:#cbd5e1; font-size:12px; cursor:default; pointer-events:none; }
+  .day.today{ box-shadow:inset 0 0 0 2px var(--primary); }
+  .day.has-data{ background:linear-gradient(160deg,#eef2ff 0%,#e0e7ff 100%); border-color:#c7d2fe; }
+  .day.has-data .num{ font-weight:700; color:var(--primary-dark); }
+  .day.has-sport{ background:linear-gradient(160deg,#d1fae5 0%,#a7f3d0 100%); border-color:#6ee7b7; }
+  .day.has-sport .num{ font-weight:700; color:var(--sport-dark); }
+  .day.has-sport .wt{ color:#059669; }
+  .day.has-sport .dot{ background:var(--sport); }
+  .day.has-sport::after{
+    content:'✓'; position:absolute; top:1px; right:5px;
+    font-size:10px; font-weight:900; line-height:1; color:#059669;
+  }
+  .day.today.has-sport{ box-shadow:inset 0 0 0 2px var(--sport); }
+  .day.has-sport:hover{ background:linear-gradient(160deg,#a7f3d0 0%,#6ee7b7 100%); border-color:#34d399; }
+
+  .legend{
+    display:flex; flex-wrap:wrap; gap:14px;
+    margin-top:14px; padding-top:12px; border-top:1px solid var(--line);
+    font-size:12px; color:var(--muted);
+  }
+  .legend span{ display:flex; align-items:center; gap:6px; }
+  .legend i{ width:12px; height:12px; border-radius:4px; display:inline-block; border:1px solid transparent; }
+  .lg-data { background:linear-gradient(160deg,#eef2ff,#e0e7ff); border-color:#c7d2fe; }
+  .lg-sport{ background:linear-gradient(160deg,#d1fae5,#a7f3d0); border-color:#6ee7b7; }
+  .lg-today{ background:#fff; border:2px solid var(--primary); }
+
+  .chart-card{ padding-bottom:10px; }
+  .chart-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .chart-head h2{ font-size:16px; }
+  .seg{ display:flex; background:#f1f5f9; border-radius:999px; padding:3px; }
+  .seg button{
+    border:0; background:transparent; padding:6px 15px; border-radius:999px;
+    font-size:13px; font-family:inherit; color:#64748b; cursor:pointer; transition:.18s;
+  }
+  .seg button.active{ background:#fff; color:var(--primary-dark); font-weight:700; box-shadow:0 1px 5px rgba(15,23,42,.09); }
+  .canvas-wrap{ width:100%; position:relative; }
+  canvas{ display:block; width:100%; }
+
+  .mask{
+    position:fixed; inset:0; background:rgba(15,23,42,.45);
+    -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
+    display:none; align-items:center; justify-content:center; padding:18px; z-index:100;
+  }
+  .mask.show{ display:flex; }
+  .modal{
+    background:#fff; width:100%; max-width:470px; max-height:88vh;
+    border-radius:22px; display:flex; flex-direction:column; overflow:hidden;
+    box-shadow:0 26px 60px rgba(15,23,42,.28);
+    animation:pop .22s cubic-bezier(.2,.9,.3,1.3);
+  }
+  @keyframes pop{ from{ transform:scale(.94); opacity:0; } to{ transform:scale(1); opacity:1; } }
+  .modal-head{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 20px 14px; border-bottom:1px solid var(--line);
+  }
+  .modal-head h3{ font-size:17px; }
+  .close-btn{
+    border:0; background:#f1f5f9; color:#64748b; width:30px; height:30px; border-radius:50%;
+    font-size:18px; line-height:1; cursor:pointer; transition:.15s; font-family:inherit;
+  }
+  .close-btn:hover{ background:#e2e8f0; color:#334155; }
+  .modal-body{ padding:18px 20px; overflow-y:auto; flex:1; }
+  .field{ margin-bottom:15px; }
+  .field > label{ display:block; font-size:13px; color:#64748b; font-weight:600; margin-bottom:7px; }
+  .field-hint{ font-size:11px; color:var(--muted); font-weight:500; margin-left:5px; }
+  input,select,textarea{
+    width:100%; padding:10px 13px; border-radius:11px; border:1px solid var(--line);
+    background:#f8fafc; font-size:14px; font-family:inherit; color:var(--text);
+    outline:none; transition:.16s;
+  }
+  input:focus,select:focus,textarea:focus{
+    border-color:var(--primary); background:#fff; box-shadow:0 0 0 3px rgba(99,102,241,.13);
+  }
+  textarea{ resize:vertical; line-height:1.6; }
+
+  .meal-row{ display:flex; gap:9px; margin-bottom:9px; align-items:stretch; }
+  .meal-tag{
+    flex:0 0 46px; display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:700; color:var(--primary-dark);
+    background:var(--primary-soft); border-radius:11px; letter-spacing:.5px;
+  }
+  .meal-row textarea{ flex:1; min-width:0; }
+
+  .meal-check{
+    flex:0 0 42px; display:flex; align-items:center; justify-content:center;
+    border:1.5px solid var(--line); border-radius:11px; background:#f8fafc;
+    cursor:pointer; transition:.18s; user-select:none;
+    -webkit-tap-highlight-color:transparent; position:relative;
+  }
+  .meal-check input{ position:absolute; opacity:0; width:0; height:0; }
+  .meal-check .box{
+    width:22px; height:22px; border-radius:7px; border:2px solid #cbd5e1; background:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:900; color:transparent;
+    transition:transform .18s, background .18s, box-shadow .18s, border-color .18s; line-height:1;
+  }
+  .meal-check:hover{ border-color:#c7d2fe; background:#eef2ff; }
+  .meal-check input:checked + .box{
+    background:linear-gradient(135deg,#10b981,#34d399);
+    border-color:transparent; color:#fff;
+    box-shadow:0 4px 12px rgba(16,185,129,.42); transform:scale(1.08);
+  }
+  .meal-check:has(input:checked){ border-color:#a7f3d0; background:#ecfdf5; }
+  .meal-check:active .box{ transform:scale(.92); }
+
+  .ex-row{ display:grid; grid-template-columns:1.25fr 1fr auto; gap:8px; margin-bottom:8px; align-items:center; }
+  .ex-row .del{
+    border:0; background:#fef2f2; color:#ef4444; width:36px; height:38px; border-radius:10px;
+    font-size:17px; line-height:1; cursor:pointer; transition:.15s; font-family:inherit;
+  }
+  .ex-row .del:hover{ background:#fee2e2; }
+  .add-ex{
+    width:100%; padding:9px; border-radius:11px; border:1px dashed #c7d2fe;
+    background:var(--primary-soft); color:var(--primary-dark); font-size:13px; font-weight:600;
+    cursor:pointer; font-family:inherit; transition:.15s;
+  }
+  .add-ex:hover{ background:#e0e7ff; }
+  .modal-foot{ display:flex; gap:10px; padding:14px 20px 18px; border-top:1px solid var(--line); }
+  .modal-foot button{
+    flex:1; padding:12px; border-radius:12px; border:0; font-size:14px; font-weight:700;
+    font-family:inherit; cursor:pointer; transition:.16s;
+  }
+  .btn-danger{ background:#fef2f2; color:#ef4444; flex:0 0 92px !important; }
+  .btn-danger:hover{ background:#fee2e2; }
+  .btn-danger:disabled{ opacity:.35; cursor:not-allowed; }
+  .btn-primary{ background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; box-shadow:0 6px 18px rgba(99,102,241,.35); }
+  .btn-primary:hover{ filter:brightness(1.06); transform:translateY(-1px); }
+
+  .toast{
+    position:fixed; left:50%; bottom:34px; transform:translate(-50%, 20px);
+    background:rgba(30,41,59,.94); color:#fff;
+    font-size:13.5px; font-weight:600; letter-spacing:.3px;
+    padding:11px 22px; border-radius:999px;
+    box-shadow:0 10px 30px rgba(15,23,42,.32);
+    opacity:0; pointer-events:none; transition:.28s cubic-bezier(.2,.9,.3,1.2);
+    z-index:200; max-width:86vw; text-align:center;
+  }
+  .toast.show{ opacity:1; transform:translate(-50%, 0); }
+  .toast.ok  { background:rgba(5,150,105,.95); }
+  .toast.err { background:rgba(220,38,38,.95); }
+
+  @media (max-width:520px){
+    body{ padding:18px 10px 50px; }
+    .card{ padding:14px 12px; border-radius:17px; }
+    .overview{ grid-template-columns:repeat(2,1fr); gap:9px; }
+    .stat-item{ padding:12px 6px 11px; border-radius:14px; }
+    .stat-value{ font-size:19px; }
+    .days,.weekdays{ gap:4px; }
+    .day{ min-height:52px; border-radius:11px; font-size:13px; }
+    .day .wt{ font-size:10px; }
+    .header-left h1{ font-size:20px; }
+    .header-right{ width:100%; }
+    .btn-io{ flex:1; justify-content:center; font-size:12px; padding:7px 8px; }
+    .stats{ font-size:12px; width:100%; }
+    .selectors{ flex:1 1 100%; }
+    .pill-select{ flex:1; }
+    .meal-tag{ flex:0 0 40px; font-size:11px; }
+    .meal-check{ flex:0 0 36px; }
+    .meal-check .box{ width:20px; height:20px; }
+  }
+</style>
+<!-- SheetJS：用于生成真正的 .xlsx 文件 -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<div class="app">
+  <header class="header">
+    <div class="header-left">
+      <h1><span>🌱</span> 减重记录</h1>
+      <p class="sub">记录每一天，遇见更好的自己</p>
+    </div>
+    <div class="header-right">
+      <div class="year-badge" id="yearBadge">2025</div>
+      <button class="btn-io excel" id="btnExportExcel" title="导出为 Excel (.xlsx) 文件">📊 导出 Excel</button>
+    </div>
+  </header>
+
+  <section class="overview" id="overview">
+    <div class="stat-item">
+      <div class="stat-label">记录天数</div>
+      <div class="stat-value" id="ovDays">0<small>天</small></div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">最新体重</div>
+      <div class="stat-value none" id="ovLatest">—</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">累计变化</div>
+      <div class="stat-value none" id="ovChange">—</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">运动次数</div>
+      <div class="stat-value" id="ovExercise">0<small>次</small></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="cal-head">
+      <div class="selectors">
+        <select class="pill-select" id="yearSelect" aria-label="选择年份"></select>
+        <select class="pill-select" id="monthSelect" aria-label="选择月份"></select>
+      </div>
+      <div class="stats" id="stats"></div>
+    </div>
+    <div class="weekdays">
+      <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+    </div>
+    <div class="days" id="days"></div>
+
+    <div class="legend">
+      <span><i class="lg-data"></i>有记录</span>
+      <span><i class="lg-sport"></i>完成运动</span>
+      <span><i class="lg-today"></i>今天</span>
+    </div>
+  </section>
+
+  <section class="card chart-card">
+    <div class="chart-head">
+      <h2>体重变化 📉</h2>
+      <div class="seg">
+        <button class="active" data-range="month">本月</button>
+        <button data-range="year">全年</button>
+      </div>
+    </div>
+    <div class="canvas-wrap" id="canvasWrap">
+      <canvas id="chart"></canvas>
+    </div>
+  </section>
+</div>
+
+<div class="mask" id="mask">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <h3 id="modalDate">—</h3>
+      <button class="close-btn" id="btnClose" aria-label="关闭">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>体重（kg）</label>
+        <input type="number" id="fWeight" step="0.1" min="0" placeholder="例如 68.5">
+      </div>
+
+      <div class="field">
+        <label>饮食记录 <span class="field-hint">右侧 ✓ 表示饭后已运动</span></label>
+        <div class="meal-row">
+          <span class="meal-tag">早餐</span>
+          <textarea id="fBreakfast" rows="2" placeholder="燕麦牛奶 + 鸡蛋"></textarea>
+          <label class="meal-check" title="早餐后是否运动">
+            <input type="checkbox" id="fBreakfastSport">
+            <span class="box">✓</span>
+          </label>
+        </div>
+        <div class="meal-row">
+          <span class="meal-tag">午餐</span>
+          <textarea id="fLunch" rows="2" placeholder="鸡胸肉沙拉 + 糙米饭"></textarea>
+          <label class="meal-check" title="午餐后是否运动">
+            <input type="checkbox" id="fLunchSport">
+            <span class="box">✓</span>
+          </label>
+        </div>
+        <div class="meal-row">
+          <span class="meal-tag">晚餐</span>
+          <textarea id="fDinner" rows="2" placeholder="清蒸鱼 + 时蔬"></textarea>
+          <label class="meal-check" title="晚餐后是否运动">
+            <input type="checkbox" id="fDinnerSport">
+            <span class="box">✓</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>睡觉时间</label>
+        <input type="time" id="fSleep">
+      </div>
+      <div class="field">
+        <label>运动</label>
+        <div id="exerciseList"></div>
+        <button type="button" class="add-ex" id="btnAddEx">＋ 添加运动</button>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-danger" id="btnDelete">删除</button>
+      <button class="btn-primary" id="btnSave">保存记录</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  const STORAGE_KEY = 'slim-calendar-data-v1';
+  const EX_TYPES = ['跑步', '快走', '骑行', '游泳', '跳绳', '力量训练', '瑜伽', '球类运动', '其他'];
+
+  const today = new Date();
+  const START_YEAR = Math.min(today.getFullYear(), 2025);
+  const END_YEAR   = Math.max(today.getFullYear(), 2027);
+
+  let currentYear  = today.getFullYear();
+  let currentMonth = today.getMonth();
+  let editingDate  = null;
+  let chartRange   = 'month';
+
+  function loadData() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) { return {}; }
+  }
+  function saveData() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+    catch (e) { alert('保存失败，可能是浏览器存储空间不足'); }
+  }
+  let data = loadData();
+
+  const pad2 = n => String(n).padStart(2, '0');
+  const dateKey = (y, m, d) => `${y}-${pad2(m + 1)}-${pad2(d)}`;
+  const $ = id => document.getElementById(id);
+
+  let toastTimer = null;
+  function showToast(msg, type) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.className = 'toast show' + (type ? ' ' + type : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.className = 'toast' + (type ? ' ' + type : ''); }, 2400);
+  }
+
+  function isSportDone(rec) {
+    if (!rec) return false;
+    if (Array.isArray(rec.exercises) && rec.exercises.some(e => (Number(e.duration) || 0) > 0)) return true;
+    const s = rec.afterSport;
+    if (s && (s.breakfast || s.lunch || s.dinner)) return true;
+    return false;
+  }
+
+  const yearSelect  = $('yearSelect');
+  const monthSelect = $('monthSelect');
+  const daysGrid    = $('days');
+  const statsEl     = $('stats');
+  const yearBadge   = $('yearBadge');
+  const mask        = $('mask');
+  const exList      = $('exerciseList');
+
+  (function initYearSelect() {
+    for (let y = START_YEAR; y <= END_YEAR; y++) {
+      const opt = document.createElement('option');
+      opt.value = y; opt.textContent = `${y} 年`;
+      yearSelect.appendChild(opt);
+    }
+    yearSelect.value = currentYear;
+    yearSelect.addEventListener('change', () => { currentYear = Number(yearSelect.value); renderAll(); });
+  })();
+
+  (function initMonthSelect() {
+    for (let i = 0; i < 12; i++) {
+      const opt = document.createElement('option');
+      opt.value = i; opt.textContent = `${i + 1} 月`;
+      monthSelect.appendChild(opt);
+    }
+    monthSelect.value = currentMonth;
+    monthSelect.addEventListener('change', () => { currentMonth = Number(monthSelect.value); renderAll(); });
+  })();
+
+  /* ==================== 导出 Excel（只含日期、体重、运动、时长） ==================== */
+  function exportExcel() {
+    if (typeof XLSX === 'undefined') {
+      showToast('Excel 组件加载失败，请检查网络后刷新页面', 'err');
+      return;
+    }
+
+    const keys = Object.keys(data).sort();
+    if (!keys.length) { showToast('还没有任何记录，先记一笔再导出吧 ~', 'err'); return; }
+
+    const btn = $('btnExportExcel');
+    const oldText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '⏳ 正在生成...';
+
+    try {
+      /* ---- 构造二维数组：日期 / 体重 / 运动项目 / 运动时长 ---- */
+      const aoa = [['日期', '体重(kg)', '运动项目', '运动时长(分钟)']];
+
+      keys.forEach(k => {
+        const rec = data[k] || {};
+        const exArr = Array.isArray(rec.exercises) ? rec.exercises : [];
+
+        const weight = (typeof rec.weight === 'number') ? rec.weight : '';
+        const exNames = exArr.map(e => e.type).filter(Boolean).join('；');
+        const exDurs  = exArr.map(e => Number(e.duration) || 0).filter(n => n > 0).join('；');
+
+        // 如果当天有多个运动，拆成多行显示（更利于 Excel 排序/筛选）
+        if (exArr.length > 1) {
+          exArr.forEach(e => {
+            const dur = Number(e.duration) || 0;
+            aoa.push([k, weight, e.type || '', dur > 0 ? dur : '']);
+          });
+        } else if (exArr.length === 1) {
+          const e = exArr[0];
+          const dur = Number(e.duration) || 0;
+          aoa.push([k, weight, e.type || '', dur > 0 ? dur : '']);
+        } else {
+          // 没有运动的日期也保留一行，只显示日期和体重
+          aoa.push([k, weight, '', '']);
+        }
+      });
+
+      /* ---- 生成 worksheet ---- */
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+      /* ---- 列宽 ---- */
+      ws['!cols'] = [
+        { wch: 14 },  // 日期
+        { wch: 12 },  // 体重
+        { wch: 18 },  // 运动项目
+        { wch: 18 }   // 运动时长
+      ];
+
+      /* ---- 表头样式 ---- */
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let c = range.s.c; c <= range.e.c; c++) {
+        const addr = XLSX.utils.encode_cell({ r: 0, c: c });
+        const cell = ws[addr];
+        if (!cell) continue;
+        cell.s = {
+          font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+          fill: { fgColor: { rgb: '6366F1' } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: {
+            top:    { style: 'thin', color: { rgb: 'DDDDDD' } },
+            bottom: { style: 'thin', color: { rgb: 'DDDDDD' } },
+            left:   { style: 'thin', color: { rgb: 'DDDDDD' } },
+            right:  { style: 'thin', color: { rgb: 'DDDDDD' } }
+          }
+        };
+      }
+
+      /* ---- 数据区样式：居中 + 边框 ---- */
+      for (let r = 1; r <= range.e.r; r++) {
+        for (let c = range.s.c; c <= range.e.c; c++) {
+          const addr = XLSX.utils.encode_cell({ r: r, c: c });
+          const cell = ws[addr];
+          if (!cell) continue;
+          cell.s = {
+            alignment: { vertical: 'center', horizontal: 'center', wrapText: true },
+            border: {
+              top:    { style: 'thin', color: { rgb: 'EEEEEE' } },
+              bottom: { style: 'thin', color: { rgb: 'EEEEEE' } },
+              left:   { style: 'thin', color: { rgb: 'EEEEEE' } },
+              right:  { style: 'thin', color: { rgb: 'EEEEEE' } }
+            }
+          };
+        }
+      }
+
+      /* ---- 冻结首行 + 自动筛选 ---- */
+      ws['!freeze'] = { xSplit: 0, ySplit: 1 };
+      ws['!autofilter'] = { ref: XLSX.utils.encode_range({
+        s: { r: 0, c: 0 },
+        e: { r: range.e.r, c: range.e.c }
+      }) };
+
+      /* ---- 生成工作簿并下载 ---- */
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, '减重记录');
+
+      const d = new Date();
+      const stamp = `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}_${pad2(d.getHours())}${pad2(d.getMinutes())}`;
+
+      XLSX.writeFile(wb, `减重记录_${stamp}.xlsx`, { cellStyles: true });
+
+      showToast(`已导出 ${keys.length} 天记录到 Excel ✅`, 'ok');
+    } catch (err) {
+      console.error(err);
+      showToast('导出失败：' + (err.message || '未知错误'), 'err');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = oldText;
+    }
+  }
+
+  /* ==================== 总览数据 ==================== */
+  function renderOverview() {
+    const prefix = `${currentYear}-`;
+    const keys = Object.keys(data).filter(k => k.startsWith(prefix)).sort();
+    const weightKeys = keys.filter(k => typeof data[k].weight === 'number');
+
+    $('ovDays').innerHTML = `${keys.length}<small>天</small>`;
+
+    const latestEl = $('ovLatest');
+    latestEl.className = 'stat-value';
+    if (weightKeys.length) {
+      const lastW = data[weightKeys[weightKeys.length - 1]].weight;
+      latestEl.innerHTML = `${lastW.toFixed(1)}<small>kg</small>`;
+    } else {
+      latestEl.classList.add('none');
+      latestEl.innerHTML = '—';
+    }
+
+    const changeEl = $('ovChange');
+    changeEl.className = 'stat-value';
+    if (weightKeys.length > 1) {
+      const firstW = data[weightKeys[0]].weight;
+      const lastW  = data[weightKeys[weightKeys.length - 1]].weight;
+      const diff   = lastW - firstW;
+      const sign   = diff > 0 ? '+' : '';
+      changeEl.innerHTML = `${sign}${diff.toFixed(1)}<small>kg</small>`;
+      if (diff > 0)      changeEl.classList.add('up');
+      else if (diff < 0) changeEl.classList.add('down');
+    } else {
+      changeEl.classList.add('none');
+      changeEl.innerHTML = '—';
+    }
+
+    let exCount = 0, exMinutes = 0;
+    keys.forEach(k => {
+      const rec = data[k];
+      if (Array.isArray(rec.exercises)) {
+        rec.exercises.forEach(e => {
+          exCount++;
+          exMinutes += Number(e.duration) || 0;
+        });
+      }
+    });
+    const exEl = $('ovExercise');
+    exEl.innerHTML = `${exCount}<small>次</small>`;
+    exEl.title = `全年运动总时长约 ${exMinutes} 分钟`;
+  }
+
+  /* ==================== 渲染日历 ==================== */
+  function renderCalendar() {
+    const y = currentYear, m = currentMonth;
+    const firstWeekday = new Date(y, m, 1).getDay();
+    const daysInMonth  = new Date(y, m + 1, 0).getDate();
+    const prevMonthDays = new Date(y, m, 0).getDate();
+    const totalCells = Math.ceil((firstWeekday + daysInMonth) / 7) * 7;
+
+    daysGrid.innerHTML = '';
+
+    for (let i = 0; i < totalCells; i++) {
+      const dayNum = i - firstWeekday + 1;
+
+      if (dayNum < 1 || dayNum > daysInMonth) {
+        const ph = document.createElement('div');
+        ph.className = 'day muted';
+        ph.textContent = dayNum < 1 ? prevMonthDays + dayNum : dayNum - daysInMonth;
+        daysGrid.appendChild(ph);
+        continue;
+      }
+
+      const key = dateKey(y, m, dayNum);
+      const rec = data[key];
+      const isToday = (y === today.getFullYear() && m === today.getMonth() && dayNum === today.getDate());
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'day';
+
+      if (isToday)  btn.classList.add('today');
+      if (rec)      btn.classList.add('has-data');
+      if (isSportDone(rec)) btn.classList.add('has-sport');
+
+      let inner = `<span class="num">${dayNum}</span>`;
+      if (rec && typeof rec.weight === 'number') {
+        inner += `<span class="wt">${rec.weight}</span>`;
+      } else if (rec) {
+        inner += `<span class="dot"></span>`;
+      }
+      btn.innerHTML = inner;
+
+      let tip = `${y}年${m + 1}月${dayNum}日`;
+      if (isSportDone(rec)) tip += ' · 已完成运动';
+      btn.title = tip;
+
+      btn.addEventListener('click', () => openModal(key, dayNum));
+      daysGrid.appendChild(btn);
+    }
+  }
+
+  /* ==================== 渲染本月统计 ==================== */
+  function renderStats() {
+    const prefix = `${currentYear}-${pad2(currentMonth + 1)}`;
+    const keys = Object.keys(data)
+      .filter(k => k.startsWith(prefix) && typeof data[k].weight === 'number')
+      .sort();
+
+    if (!keys.length) {
+      statsEl.textContent = '本月暂无记录，点击日期开始记录吧';
+      return;
+    }
+
+    const vals = keys.map(k => data[k].weight);
+    const avg  = vals.reduce((a, b) => a + b, 0) / vals.length;
+
+    let diffHtml = '';
+    if (vals.length > 1) {
+      const diff = vals[vals.length - 1] - vals[0];
+      const cls  = diff > 0 ? 'up' : 'down';
+      const sign = diff > 0 ? '+' : '';
+      diffHtml = ` · 变化 <span class="${cls}">${sign}${diff.toFixed(1)}kg</span>`;
+    }
+
+    statsEl.innerHTML = `本月记录 <b>${keys.length}</b> 天 · 平均 <b>${avg.toFixed(1)}</b> kg${diffHtml}`;
+  }
+
+  /* ==================== 图表数据 ==================== */
+  function getChartPoints() {
+    const prefix = chartRange === 'month'
+      ? `${currentYear}-${pad2(currentMonth + 1)}`
+      : `${currentYear}-`;
+
+    return Object.keys(data)
+      .filter(k => k.startsWith(prefix) && typeof data[k].weight === 'number')
+      .sort()
+      .map(k => ({
+        label: chartRange === 'month' ? k.slice(8) : k.slice(5).replace('-', '/'),
+        weight: data[k].weight
+      }));
+  }
+
+  /* ==================== 绘制体重折线图 ==================== */
+  function renderChart() {
+    const canvas = $('chart');
+    const wrap   = $('canvasWrap');
+    const ctx    = canvas.getContext('2d');
+    const dpr    = window.devicePixelRatio || 1;
+
+    const W = wrap.clientWidth || 320;
+    const H = 260;
+
+    canvas.style.width  = W + 'px';
+    canvas.style.height = H + 'px';
+    canvas.width  = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
+    const points = getChartPoints();
+
+    if (!points.length) {
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '14px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('暂无体重记录，快去记录今天的体重吧 ~', W / 2, H / 2);
+      return;
+    }
+
+    const padL = 48, padR = 20, padT = 24, padB = 34;
+    const plotW = W - padL - padR;
+    const plotH = H - padT - padB;
+
+    const vals = points.map(p => p.weight);
+    let min = Math.min(...vals);
+    let max = Math.max(...vals);
+
+    if (max - min < 0.6) {
+      const c = (max + min) / 2;
+      min = c - 0.5; max = c + 0.5;
+    } else {
+      const p = (max - min) * 0.18;
+      min -= p; max += p;
+    }
+    min = Math.floor(min * 10) / 10;
+    max = Math.ceil(max * 10) / 10;
+
+    const TICKS = 4;
+    ctx.font = '11px -apple-system,"PingFang SC",sans-serif';
+    ctx.textBaseline = 'middle';
+
+    for (let i = 0; i <= TICKS; i++) {
+      const y = padT + (plotH * i) / TICKS;
+      const v = max - ((max - min) * i) / TICKS;
+
+      ctx.strokeStyle = '#eef2f7';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(padL, y);
+      ctx.lineTo(padL + plotW, y);
+      ctx.stroke();
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.textAlign = 'right';
+      ctx.fillText(v.toFixed(1), padL - 9, y);
+    }
+
+    const n = points.length;
+    const xs = points.map((_, i) => n === 1 ? padL + plotW / 2 : padL + (plotW * i) / (n - 1));
+    const ys = points.map(p => padT + plotH * (max - p.weight) / (max - min));
+
+    const grad = ctx.createLinearGradient(0, padT, 0, padT + plotH);
+    grad.addColorStop(0, 'rgba(99,102,241,0.30)');
+    grad.addColorStop(1, 'rgba(99,102,241,0.02)');
+
+    ctx.beginPath();
+    ctx.moveTo(xs[0], padT + plotH);
+    for (let i = 0; i < n; i++) ctx.lineTo(xs[i], ys[i]);
+    ctx.lineTo(xs[n - 1], padT + plotH);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.beginPath();
+    for (let i = 0; i < n; i++) {
+      i === 0 ? ctx.moveTo(xs[i], ys[i]) : ctx.lineTo(xs[i], ys[i]);
+    }
+    ctx.strokeStyle = '#6366f1';
+    ctx.lineWidth = 2.6;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    for (let i = 0; i < n; i++) {
+      ctx.beginPath();
+      ctx.arc(xs[i], ys[i], 4.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#fff';
+      ctx.fill();
+      ctx.strokeStyle = '#6366f1';
+      ctx.lineWidth = 2.6;
+      ctx.stroke();
+    }
+
+    if (n <= 12) {
+      ctx.font = '10px -apple-system,"PingFang SC",sans-serif';
+      ctx.fillStyle = '#6366f1';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      for (let i = 0; i < n; i++) {
+        ctx.fillText(points[i].weight.toFixed(1), xs[i], ys[i] - 8);
+      }
+    }
+
+    const step = Math.max(1, Math.ceil(n / 9));
+    ctx.font = '11px -apple-system,"PingFang SC",sans-serif';
+    ctx.fillStyle = '#94a3b8';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    for (let i = 0; i < n; i++) {
+      if (i % step !== 0 && i !== n - 1) continue;
+      ctx.fillText(points[i].label, xs[i], padT + plotH + 10);
+    }
+  }
+
+  function renderAll() {
+    yearBadge.textContent = currentYear + ' 年';
+    yearSelect.value  = currentYear;
+    monthSelect.value = currentMonth;
+    renderOverview();
+    renderCalendar();
+    renderStats();
+    renderChart();
+  }
+
+  function addExerciseRow(ex) {
+    ex = ex || { type: EX_TYPES[0], duration: '' };
+
+    const row = document.createElement('div');
+    row.className = 'ex-row';
+
+    const sel = document.createElement('select');
+    sel.className = 'ex-type';
+    EX_TYPES.forEach(t => {
+      const o = document.createElement('option');
+      o.value = t;
+      o.textContent = t;
+      if (t === ex.type) o.selected = true;
+      sel.appendChild(o);
+    });
+
+    const dur = document.createElement('input');
+    dur.type = 'number';
+    dur.className = 'ex-dur';
+    dur.min = '0';
+    dur.placeholder = '分钟';
+    dur.value = ex.duration ?? '';
+
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'del';
+    del.textContent = '×';
+    del.title = '删除这项运动';
+    del.addEventListener('click', () => row.remove());
+
+    row.appendChild(sel);
+    row.appendChild(dur);
+    row.appendChild(del);
+    exList.appendChild(row);
+  }
+
+  function openModal(key, dayNum) {
+    editingDate = key;
+    const rec = data[key] || {};
+
+    $('modalDate').textContent = `${currentYear}年${currentMonth + 1}月${dayNum}日`;
+    $('fWeight').value = (typeof rec.weight === 'number') ? rec.weight : '';
+
+    let breakfast = '', lunch = '', dinner = '';
+    const diet = rec.diet;
+    if (typeof diet === 'string') {
+      breakfast = diet;
+    } else if (diet && typeof diet === 'object') {
+      breakfast = diet.breakfast || '';
+      lunch     = diet.lunch     || '';
+      dinner    = diet.dinner    || '';
+    }
+    $('fBreakfast').value = breakfast;
+    $('fLunch').value     = lunch;
+    $('fDinner').value    = dinner;
+
+    const sport = rec.afterSport || {};
+    $('fBreakfastSport').checked = !!sport.breakfast;
+    $('fLunchSport').checked     = !!sport.lunch;
+    $('fDinnerSport').checked    = !!sport.dinner;
+
+    $('fSleep').value = rec.sleep || '';
+
+    exList.innerHTML = '';
+    if (Array.isArray(rec.exercises) && rec.exercises.length) {
+      rec.exercises.forEach(e => addExerciseRow(e));
+    } else {
+      addExerciseRow();
+    }
+
+    $('btnDelete').disabled = !data[key];
+
+    mask.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    mask.classList.remove('show');
+    document.body.style.overflow = '';
+    editingDate = null;
+  }
+
+  function saveRecord() {
+    if (!editingDate) return;
+
+    const weightRaw = $('fWeight').value.trim();
+    const breakfast = $('fBreakfast').value.trim();
+    const lunch     = $('fLunch').value.trim();
+    const dinner    = $('fDinner').value.trim();
+    const sleep     = $('fSleep').value;
+
+    const afterSport = {
+      breakfast: $('fBreakfastSport').checked,
+      lunch:     $('fLunchSport').checked,
+      dinner:    $('fDinnerSport').checked
+    };
+    const hasSport = afterSport.breakfast || afterSport.lunch || afterSport.dinner;
+
+    const exercises = Array.from(exList.querySelectorAll('.ex-row'))
+      .map(r => ({
+        type: r.querySelector('.ex-type').value,
+        duration: Number(r.querySelector('.ex-dur').value) || 0
+      }))
+      .filter(e => e.duration > 0);
+
+    const rec = {};
+    if (weightRaw !== '') rec.weight = Number(weightRaw);
+    if (breakfast || lunch || dinner) {
+      rec.diet = { breakfast, lunch, dinner };
+    }
+    if (hasSport) rec.afterSport = afterSport;
+    if (sleep) rec.sleep = sleep;
+    if (exercises.length) rec.exercises = exercises;
+
+    if (Object.keys(rec).length === 0) {
+      delete data[editingDate];
+    } else {
+      data[editingDate] = rec;
+    }
+
+    saveData();
+    closeModal();
+    renderAll();
+  }
+
+  function deleteRecord() {
+    if (!editingDate || !data[editingDate]) return;
+    if (!confirm('确定要删除这一天的记录吗？')) return;
+    delete data[editingDate];
+    saveData();
+    closeModal();
+    renderAll();
+  }
+
+  $('btnAddEx').addEventListener('click', () => addExerciseRow());
+  $('btnSave').addEventListener('click', saveRecord);
+  $('btnDelete').addEventListener('click', deleteRecord);
+  $('btnClose').addEventListener('click', closeModal);
+  $('btnExportExcel').addEventListener('click', exportExcel);
+
+  mask.addEventListener('click', e => { if (e.target === mask) closeModal(); });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && mask.classList.contains('show')) closeModal();
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && mask.classList.contains('show')) saveRecord();
+  });
+
+  document.querySelectorAll('.seg button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.seg button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      chartRange = btn.dataset.range;
+      renderChart();
+    });
+  });
+
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(renderChart, 120);
+  });
+
+  renderAll();
+
+})();
+</script>
+</body>
+</html>
