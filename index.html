@@ -77,7 +77,7 @@
   }
   .card-title{
     font-size:14px;font-weight:700;margin-bottom:14px;
-    display:flex;align-items:center;gap:8px;
+    display:flex;align-items:center;gap:8px;flex-wrap:wrap;
   }
   .card-title::before{
     content:'';width:3px;height:14px;border-radius:2px;background:var(--primary);
@@ -90,10 +90,55 @@
     font-style:normal;color:var(--green);font-weight:900;font-size:12px;
   }
 
+  /* ---------- 月份控制条 ---------- */
+  .month-bar{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    padding:10px 14px;margin-bottom:16px;
+    background:linear-gradient(180deg,#f8faff,#f2f6ff);
+    border:1px solid #e3ecff;border-radius:14px;
+  }
+  .month-bar .mb-left{display:flex;align-items:center;gap:8px}
+  .month-bar button.mb-arrow{
+    width:30px;height:30px;border:none;border-radius:9px;background:#fff;
+    color:#5b6478;cursor:pointer;font-size:15px;line-height:1;
+    display:flex;align-items:center;justify-content:center;
+    box-shadow:0 1px 4px rgba(31,41,55,.08);transition:.15s;
+  }
+  .month-bar button.mb-arrow:hover{background:var(--primary);color:#fff}
+  .month-bar .mb-title{
+    font-size:15px;font-weight:800;color:#2b3648;min-width:100px;text-align:center;
+    letter-spacing:.3px;
+  }
+  .month-bar .mb-title small{font-size:11px;font-weight:600;color:var(--muted);margin-left:5px}
+  .month-bar .mb-chips{display:flex;gap:5px;flex-wrap:wrap;flex:1;min-width:0}
+  .month-bar .chip{
+    border:1px solid #dde6f5;background:#fff;color:#7a8496;
+    font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:20px;
+    cursor:pointer;font-family:inherit;transition:.15s;white-space:nowrap;
+  }
+  .month-bar .chip:hover{border-color:var(--primary);color:var(--primary)}
+  .month-bar .chip.active{background:var(--primary);border-color:var(--primary);color:#fff}
+  .month-bar .chip.has-dot::after{
+    content:'';display:inline-block;width:5px;height:5px;border-radius:50%;
+    background:var(--green);margin-left:5px;vertical-align:middle;
+  }
+  .month-bar .chip.active.has-dot::after{background:#fff}
+  .month-bar .mb-toggle{
+    border:1.5px solid #dde6f5;background:#fff;color:#5b6478;
+    font-size:12px;font-weight:700;padding:6px 13px;border-radius:20px;
+    cursor:pointer;font-family:inherit;transition:.15s;white-space:nowrap;
+  }
+  .month-bar .mb-toggle:hover{border-color:var(--primary);color:var(--primary)}
+  .month-bar .mb-toggle.on{background:var(--primary-soft);border-color:#bcd6ff;color:var(--primary)}
+
   /* ---------- 日历 ---------- */
   .months{
     display:grid;grid-template-columns:repeat(auto-fill,minmax(206px,1fr));
     gap:16px 14px;
+  }
+  .months.single{
+    grid-template-columns:minmax(0,340px);
+    justify-content:center;
   }
   .month{min-width:0}
   .month-title{
@@ -104,7 +149,13 @@
     font-size:10px;font-weight:600;color:var(--green);
     background:var(--green-soft);border-radius:20px;padding:1px 7px;
   }
-  .month-title .cnt.plain{color:#8b95a7;background:#f2f5fa}
+  .months.single .month-title{font-size:14px;margin-bottom:10px}
+  .months.single .grid{gap:4px}
+  .months.single .cell{font-size:13px;border-radius:10px}
+  .months.single .cell .wt{font-size:10px}
+  .months.single .cell .check{font-size:11px;right:4px;bottom:3px}
+  .months.single .dow{font-size:11px}
+
   .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
   .dow{
     font-size:10px;color:#b3bccc;text-align:center;
@@ -276,9 +327,11 @@
     .chart-card.wide{grid-column:auto}
     .months{grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:14px 10px}
     .brand h1{font-size:18px}
+    .month-bar .mb-title{min-width:78px;font-size:14px}
   }
   @media (max-width:420px){
     .months{grid-template-columns:1fr 1fr;gap:14px 8px}
+    .months.single{grid-template-columns:minmax(0,1fr)}
     .cell{font-size:10px}
     .cell .wt{font-size:7.5px}
     .cell .check{font-size:8px}
@@ -329,10 +382,22 @@
   <!-- 日历 -->
   <div class="card">
     <div class="card-title">
-      全年日历 · 点击任意日期记录
+      我的减脂日历
       <span class="legend"><i>✓</i> 表示当天完成饭后运动</span>
     </div>
-    <div class="months" id="months"></div>
+
+    <!-- 月份控制条 -->
+    <div class="month-bar">
+      <div class="mb-left">
+        <button class="mb-arrow" id="mbPrev" title="上个月">‹</button>
+        <span class="mb-title" id="mbTitle">1月<small>2026</small></span>
+        <button class="mb-arrow" id="mbNext" title="下个月">›</button>
+      </div>
+      <div class="mb-chips" id="mbChips"></div>
+      <button class="mb-toggle" id="mbToggle">展开全年</button>
+    </div>
+
+    <div class="months single" id="months"></div>
   </div>
 
   <!-- 图表 -->
@@ -436,6 +501,7 @@
   const todayKey = () => { const t = new Date(); return keyOf(t.getFullYear(), t.getMonth(), t.getDate()); };
   const WEEK_CN = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
   const EX_TYPES = ['跑步', '快走', '骑行', '游泳', '力量训练', '瑜伽', '跳绳', '球类', '爬山', 'HIIT', '其他'];
+  const MONTH_CN = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
 
   /* 日历支持的年份范围：2026 - 2027 */
   const MIN_YEAR = 2026;
@@ -468,7 +534,7 @@
   }
 
   /* ==================== 数据层 ==================== */
-  const STORAGE_KEY = 'fit-calendar-v2';
+  const STORAGE_KEY = 'fit-calendar-v3';
   let data = {};
   try { data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch (e) { data = {}; }
 
@@ -493,9 +559,11 @@
 
   /* ==================== 状态 ==================== */
   let viewYear = clampYear(new Date().getFullYear());
+  let viewMonth = new Date().getMonth();      // 0-11，当前显示的单月
+  let expanded = false;                        // false=只显示一个月；true=展开全年
   let currentKey = null;
   let rangeDays = 30;
-  let postMealDone = false;   // 当前弹窗里「饭后运动」是否完成
+  let postMealDone = false;
 
   /* ==================== 统计 ==================== */
   function renderStats() {
@@ -524,7 +592,6 @@
       $('#stDelta').className = 'stat-value';
     }
 
-    // 饭后运动总次数
     const pmCount = entries.filter(e => e.postMeal).length;
     $('#stPostMeal').innerHTML = pmCount + ' <small>次</small>';
   }
@@ -535,545 +602,49 @@
     $('#prevYear').disabled = viewYear <= MIN_YEAR;
     $('#nextYear').disabled = viewYear >= MAX_YEAR;
     const nowY = clampYear(new Date().getFullYear());
-    $('#todayBtn').disabled = (viewYear === nowY);
+    $('#todayBtn').disabled = (viewYear === nowY && viewMonth === new Date().getMonth() && !expanded);
   }
 
-  function renderCalendar() {
-    const wrap = $('#months');
-    wrap.innerHTML = '';
+  /* 生成某个月的 DOM 片段 */
+  function buildMonthEl(y, m) {
+    const monthEl = document.createElement('div');
+    monthEl.className = 'month';
+
+    const first = new Date(y, m, 1);
+    const startDow = first.getDay();
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+
+    let cnt = 0, pmCnt = 0;
+    for (let d = 1; d <= daysInMonth; d++) {
+      const r = data[keyOf(y, m, d)];
+      if (r) { cnt++; if (r.postMeal) pmCnt++; }
+    }
+
+    const title = document.createElement('div');
+    title.className = 'month-title';
+    title.innerHTML = `${MONTH_CN[m]} ${y}` +
+      (cnt ? `<span class="cnt">${cnt}天</span>` : '') +
+      (pmCnt ? `<span class="cnt">✓${pmCnt}</span>` : '');
+    monthEl.appendChild(title);
+
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+
+    ['日', '一', '二', '三', '四', '五', '六'].forEach(t => {
+      const el = document.createElement('div');
+      el.className = 'dow';
+      el.textContent = t;
+      grid.appendChild(el);
+    });
+
+    for (let i = 0; i < startDow; i++) {
+      const el = document.createElement('div');
+      el.className = 'cell empty';
+      grid.appendChild(el);
+    }
+
     const tk = todayKey();
 
-    for (let m = 0; m < 12; m++) {
-      const monthEl = document.createElement('div');
-      monthEl.className = 'month';
-
-      const first = new Date(viewYear, m, 1);
-      const startDow = first.getDay();
-      const daysInMonth = new Date(viewYear, m + 1, 0).getDate();
-
-      let cnt = 0, pmCnt = 0;
-      for (let d = 1; d <= daysInMonth; d++) {
-        const r = data[keyOf(viewYear, m, d)];
-        if (r) { cnt++; if (r.postMeal) pmCnt++; }
-      }
-
-      const title = document.createElement('div');
-      title.className = 'month-title';
-      title.innerHTML = `${m + 1}月` +
-        (cnt ? `<span class="cnt">${cnt}天</span>` : '') +
-        (pmCnt ? `<span class="cnt">✓${pmCnt}</span>` : '');
-      monthEl.appendChild(title);
-
-      const grid = document.createElement('div');
-      grid.className = 'grid';
-
-      ['日', '一', '二', '三', '四', '五', '六'].forEach(t => {
-        const el = document.createElement('div');
-        el.className = 'dow';
-        el.textContent = t;
-        grid.appendChild(el);
-      });
-
-      for (let i = 0; i < startDow; i++) {
-        const el = document.createElement('div');
-        el.className = 'cell empty';
-        grid.appendChild(el);
-      }
-
-      for (let d = 1; d <= daysInMonth; d++) {
-        const key = keyOf(viewYear, m, d);
-        const rec = data[key];
-        const cell = document.createElement('div');
-        cell.className = 'cell';
-
-        const isToday = key === tk;
-        const isFuture = key > tk;
-
-        if (rec) cell.classList.add('has-data');
-        if (isToday) cell.classList.add('today');
-        if (isFuture) cell.classList.add('future');
-
-        let inner = `<span class="dnum">${d}</span>`;
-        if (rec && typeof rec.weight === 'number' && rec.weight > 0) {
-          inner += `<span class="wt">${rec.weight}</span>`;
-        }
-        // 饭后运动打卡 → 绿色勾
-        if (rec && rec.postMeal) {
-          inner += `<span class="check" title="已完成饭后运动">✓</span>`;
-        }
-        cell.innerHTML = inner;
-
-        if (!isFuture) {
-          cell.addEventListener('click', () => openModal(key));
-        }
-        grid.appendChild(cell);
-      }
-
-      monthEl.appendChild(grid);
-      wrap.appendChild(monthEl);
-    }
-  }
-
-  /* ==================== 图表绘制 ==================== */
-  function prepCanvas(canvas) {
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    const w = Math.max(rect.width, 100);
-    const h = Math.max(rect.height, 80);
-    canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(h * dpr);
-    const ctx = canvas.getContext('2d');
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    return { ctx, w, h };
-  }
-
-  function drawLineChart(canvas, points, opts) {
-    opts = opts || {};
-    const { ctx, w, h } = prepCanvas(canvas);
-    ctx.clearRect(0, 0, w, h);
-
-    const pad = { l: 46, r: 16, t: 18, b: 28 };
-    const cw = w - pad.l - pad.r;
-    const ch = h - pad.t - pad.b;
-    const color = opts.color || '#4f8cff';
-    const domain = opts.domain || null;
-
-    let vMin, vMax;
-    if (points.length) {
-      vMin = Math.min.apply(null, points.map(p => p.v));
-      vMax = Math.max.apply(null, points.map(p => p.v));
-    } else {
-      vMin = 0; vMax = 1;
-    }
-    if (vMin === vMax) { vMin -= 1; vMax += 1; }
-    const padV = (vMax - vMin) * 0.18;
-    vMin -= padV; vMax += padV;
-    if (vMin < 0 && opts.minZero) vMin = 0;
-
-    let tMin, tMax;
-    if (domain) {
-      tMin = domain[0]; tMax = domain[1];
-    } else if (points.length) {
-      tMin = points[0].t; tMax = points[points.length - 1].t;
-    } else {
-      tMin = Date.now() - DAY * 30; tMax = Date.now();
-    }
-    if (tMax === tMin) tMax = tMin + DAY;
-
-    const X = t => pad.l + ((t - tMin) / (tMax - tMin)) * cw;
-    const Y = v => pad.t + ch - ((v - vMin) / (vMax - vMin)) * ch;
-
-    ctx.font = '10px -apple-system, system-ui, sans-serif';
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
-    for (let i = 0; i <= 4; i++) {
-      const v = vMin + (vMax - vMin) * i / 4;
-      const y = Y(v);
-      ctx.strokeStyle = '#eef1f7';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(pad.l, y);
-      ctx.lineTo(pad.l + cw, y);
-      ctx.stroke();
-      ctx.fillStyle = '#aab3c4';
-      ctx.fillText(v.toFixed(1), pad.l - 8, y);
-    }
-
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.fillStyle = '#aab3c4';
-    const ticks = 5;
-    for (let i = 0; i < ticks; i++) {
-      const t = tMin + (tMax - tMin) * (i / (ticks - 1));
-      const d = new Date(t);
-      ctx.fillText(`${d.getMonth() + 1}/${d.getDate()}`, X(t), pad.t + ch + 9);
-    }
-
-    if (!points.length) {
-      ctx.fillStyle = '#c3cad8';
-      ctx.font = '13px -apple-system, system-ui, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('暂无体重记录', w / 2, h / 2);
-      return;
-    }
-
-    const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + ch);
-    grad.addColorStop(0, hexA(color, 0.26));
-    grad.addColorStop(1, hexA(color, 0));
-    ctx.beginPath();
-    points.forEach((p, i) => {
-      const x = X(p.t), y = Y(p.v);
-      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
-    });
-    ctx.lineTo(X(points[points.length - 1].t), pad.t + ch);
-    ctx.lineTo(X(points[0].t), pad.t + ch);
-    ctx.closePath();
-    ctx.fillStyle = grad;
-    ctx.fill();
-
-    ctx.beginPath();
-    points.forEach((p, i) => {
-      const x = X(p.t), y = Y(p.v);
-      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
-    });
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2.2;
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-    ctx.stroke();
-
-    if (points.length <= 70) {
-      points.forEach(p => {
-        ctx.beginPath();
-        ctx.arc(X(p.t), Y(p.v), 3.2, 0, Math.PI * 2);
-        ctx.fillStyle = '#fff';
-        ctx.fill();
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      });
-    }
-
-    if (points.length >= 2) {
-      const last = points[points.length - 1];
-      ctx.beginPath();
-      ctx.arc(X(last.t), Y(last.v), 5.5, 0, Math.PI * 2);
-      ctx.fillStyle = hexA(color, 0.18);
-      ctx.fill();
-    }
-  }
-
-  function drawBarChart(canvas, bars, opts) {
-    opts = opts || {};
-    const { ctx, w, h } = prepCanvas(canvas);
-    ctx.clearRect(0, 0, w, h);
-
-    const pad = { l: 40, r: 12, t: 18, b: 28 };
-    const cw = w - pad.l - pad.r;
-    const ch = h - pad.t - pad.b;
-    const color = opts.color || '#22c55e';
-
-    const maxV = bars.length ? Math.max.apply(null, bars.map(b => b.value)) : 0;
-    const niceMax = niceCeil(maxV) || 1;
-
-    ctx.font = '10px -apple-system, system-ui, sans-serif';
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
-    for (let i = 0; i <= 4; i++) {
-      const y = pad.t + ch - (ch * i / 4);
-      ctx.strokeStyle = '#eef1f7';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(pad.l, y);
-      ctx.lineTo(pad.l + cw, y);
-      ctx.stroke();
-      ctx.fillStyle = '#aab3c4';
-      const val = niceMax * i / 4;
-      ctx.fillText(val % 1 === 0 ? String(val) : val.toFixed(1), pad.l - 8, y);
-    }
-
-    if (!bars.length || maxV === 0) {
-      ctx.fillStyle = '#c3cad8';
-      ctx.font = '13px -apple-system, system-ui, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(opts.emptyText || '暂无数据', w / 2, h / 2);
-      return;
-    }
-
-    const bw = cw / bars.length;
-    const barW = Math.max(2, Math.min(bw * 0.62, 24));
-
-    bars.forEach((b, i) => {
-      if (b.value <= 0) return;
-      const bh = (b.value / niceMax) * ch;
-      const x = pad.l + i * bw + (bw - barW) / 2;
-      const y = pad.t + ch - bh;
-      const g = ctx.createLinearGradient(0, y, 0, pad.t + ch);
-      g.addColorStop(0, color);
-      g.addColorStop(1, hexA(color, 0.4));
-      ctx.fillStyle = g;
-      roundRect(ctx, x, y, barW, Math.max(bh, 2), Math.min(4, barW / 2));
-      ctx.fill();
-    });
-
-    const every = Math.max(1, Math.ceil(bars.length / 7));
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.fillStyle = '#aab3c4';
-    bars.forEach((b, i) => {
-      if (i % every !== 0 && i !== bars.length - 1) return;
-      const x = pad.l + i * bw + bw / 2;
-      ctx.fillText(b.label, x, pad.t + ch + 9);
-    });
-  }
-
-  /* ==================== 分桶 ==================== */
-  function buildBuckets(totalDays) {
-    const step = totalDays > 120 ? 7 : 1;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const earliest = today.getTime() - (totalDays - 1) * DAY;
-
-    const buckets = [];
-    let end = today.getTime();
-    while (end >= earliest) {
-      buckets.push({
-        start: end - (step - 1) * DAY,
-        end: end,
-        value: 0,
-        sleepSum: 0,
-        sleepCount: 0
-      });
-      end -= step * DAY;
-    }
-    buckets.reverse();
-    if (buckets.length) buckets[0].start = Math.max(buckets[0].start, earliest);
-    return buckets;
-  }
-
-  /* ==================== 图表渲染 ==================== */
-  function renderCharts() {
-    const now = new Date();
-    now.setHours(23, 59, 59, 999);
-    const nowMs = now.getTime();
-    const domainStart = nowMs - (rangeDays - 1) * DAY;
-
-    const wPoints = [];
-    Object.keys(data).sort().forEach(k => {
-      const rec = data[k];
-      if (typeof rec.weight !== 'number' || rec.weight <= 0) return;
-      const t = parseKey(k).getTime();
-      if (t >= domainStart && t <= nowMs) wPoints.push({ t: t, v: rec.weight });
-    });
-    drawLineChart($('#weightChart'), wPoints, {
-      color: '#4f8cff',
-      domain: [domainStart, nowMs]
-    });
-
-    const buckets = buildBuckets(rangeDays);
-
-    buckets.forEach(b => {
-      for (let ts = b.start; ts <= b.end; ts += DAY) {
-        const d = new Date(ts);
-        const rec = data[keyOf(d.getFullYear(), d.getMonth(), d.getDate())];
-        if (!rec) continue;
-        const mins = (rec.exercises || []).reduce((s, e) => s + (Number(e.minutes) || 0), 0);
-        b.value += mins;
-        const sh = sleepHours(rec);
-        if (sh != null) { b.sleepSum += sh; b.sleepCount += 1; }
-      }
-      const ed = new Date(b.end);
-      b.label = `${ed.getMonth() + 1}/${ed.getDate()}`;
-    });
-
-    const exBars = buckets.map(b => ({ value: b.value, label: b.label }));
-    drawBarChart($('#exerciseChart'), exBars, {
-      color: '#22c55e',
-      emptyText: '暂无运动记录'
-    });
-
-    const sleepBars = buckets.map(b => ({
-      value: b.sleepCount ? b.sleepSum / b.sleepCount : 0,
-      label: b.label
-    }));
-    drawBarChart($('#sleepChart'), sleepBars, {
-      color: '#8b5cf6',
-      emptyText: '暂无睡眠记录'
-    });
-  }
-
-  function renderAll() {
-    renderStats();
-    renderCalendar();
-    renderCharts();
-  }
-
-  /* ==================== 弹窗逻辑 ==================== */
-  const overlay = $('#overlay');
-  const exerciseList = $('#exerciseList');
-
-  function buildTypeOptions(selected) {
-    let types = EX_TYPES.slice();
-    if (selected && types.indexOf(selected) === -1) types.push(selected);
-    return types.map(t =>
-      `<option value="${t}"${t === selected ? ' selected' : ''}>${t}</option>`
-    ).join('');
-  }
-
-  function addExerciseRow(type, minutes) {
-    const row = document.createElement('div');
-    row.className = 'ex-row';
-    row.innerHTML =
-      `<select class="ex-type">${buildTypeOptions(type || EX_TYPES[0])}</select>` +
-      `<input type="number" class="ex-min" min="0" step="1" placeholder="分钟" value="${minutes != null ? minutes : ''}">` +
-      `<button type="button" class="ex-del" title="删除">✕</button>`;
-    row.querySelector('.ex-del').addEventListener('click', () => row.remove());
-    exerciseList.appendChild(row);
-    return row;
-  }
-
-  function updateSleepHint() {
-    const h = sleepHours({ sleep: $('#inSleep').value, wake: $('#inWake').value });
-    $('#sleepHint').textContent = h != null
-      ? `睡眠时长：${h.toFixed(1)} 小时`
-      : '睡眠时长：--';
-  }
-
-  /* ---- 饭后运动打卡 ---- */
-  function setPostMeal(v) {
-    postMealDone = !!v;
-    const btn = $('#postMealBtn');
-    btn.classList.toggle('done', postMealDone);
-    btn.querySelector('.pm-text').textContent = postMealDone
-      ? '已完成饭后运动'
-      : '点击标记：今天完成饭后运动';
-  }
-
-  $('#postMealBtn').addEventListener('click', () => setPostMeal(!postMealDone));
-
-  function formatTitle(key) {
-    const d = parseKey(key);
-    return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日<span>${WEEK_CN[d.getDay()]}</span>`;
-  }
-
-  function openModal(key) {
-    currentKey = key;
-    const rec = data[key] || {};
-
-    $('#modalDate').innerHTML = formatTitle(key);
-    $('#inWeight').value = (typeof rec.weight === 'number') ? rec.weight : '';
-    $('#inDiet').value = rec.diet || '';
-    $('#inSleep').value = rec.sleep || '';
-    $('#inWake').value = rec.wake || '';
-
-    exerciseList.innerHTML = '';
-    if (rec.exercises && rec.exercises.length) {
-      rec.exercises.forEach(e => addExerciseRow(e.type, e.minutes));
-    }
-
-    setPostMeal(!!rec.postMeal);
-    $('#btnDelete').style.visibility = data[key] ? 'visible' : 'hidden';
-    updateSleepHint();
-
-    overlay.classList.add('show');
-    document.body.style.overflow = 'hidden';
-    setTimeout(() => $('#inWeight').focus(), 60);
-  }
-
-  function closeModal() {
-    overlay.classList.remove('show');
-    document.body.style.overflow = '';
-    currentKey = null;
-  }
-
-  function collectRecord() {
-    const weightRaw = $('#inWeight').value.trim();
-    const weight = weightRaw === '' ? null : Number(weightRaw);
-    const diet = $('#inDiet').value.trim();
-    const sleep = $('#inSleep').value;
-    const wake = $('#inWake').value;
-
-    const exercises = Array.prototype.slice.call(exerciseList.querySelectorAll('.ex-row'))
-      .map(row => ({
-        type: row.querySelector('.ex-type').value,
-        minutes: Number(row.querySelector('.ex-min').value) || 0
-      }))
-      .filter(e => e.minutes > 0);
-
-    const noWeight = (weight === null || isNaN(weight));
-    const isEmpty = noWeight && !diet && !sleep && !wake && !postMealDone && exercises.length === 0;
-    if (isEmpty) return null;
-
-    return {
-      weight: noWeight ? null : weight,
-      diet: diet,
-      sleep: sleep,
-      wake: wake,
-      postMeal: postMealDone,
-      exercises: exercises
-    };
-  }
-
-  function saveCurrent() {
-    if (!currentKey) return;
-    const rec = collectRecord();
-    if (rec === null) delete data[currentKey];
-    else data[currentKey] = rec;
-    persist();
-    closeModal();
-    renderAll();
-  }
-
-  function deleteCurrent() {
-    if (!currentKey || !data[currentKey]) { closeModal(); return; }
-    if (!confirm('确定要删除这一天的记录吗？')) return;
-    delete data[currentKey];
-    persist();
-    closeModal();
-    renderAll();
-  }
-
-  /* ==================== 事件绑定 ==================== */
-  $('#prevYear').addEventListener('click', () => {
-    if (viewYear <= MIN_YEAR) return;
-    viewYear--;
-    updateYearNav();
-    renderCalendar();
-  });
-  $('#nextYear').addEventListener('click', () => {
-    if (viewYear >= MAX_YEAR) return;
-    viewYear++;
-    updateYearNav();
-    renderCalendar();
-  });
-  $('#todayBtn').addEventListener('click', () => {
-    viewYear = clampYear(new Date().getFullYear());
-    updateYearNav();
-    renderCalendar();
-  });
-
-  $('#rangeSwitch').addEventListener('click', e => {
-    const btn = e.target.closest('button');
-    if (!btn) return;
-    Array.prototype.forEach.call($('#rangeSwitch').children, b => b.classList.remove('active'));
-    btn.classList.add('active');
-    rangeDays = Number(btn.dataset.days);
-    renderCharts();
-  });
-
-  $('#addExercise').addEventListener('click', () => addExerciseRow());
-  $('#inSleep').addEventListener('change', updateSleepHint);
-  $('#inWake').addEventListener('change', updateSleepHint);
-
-  $('#btnSave').addEventListener('click', saveCurrent);
-  $('#btnCancel').addEventListener('click', closeModal);
-  $('#btnDelete').addEventListener('click', deleteCurrent);
-  $('#closeModal').addEventListener('click', closeModal);
-
-  overlay.addEventListener('mousedown', e => {
-    if (e.target === overlay) closeModal();
-  });
-
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && overlay.classList.contains('show')) closeModal();
-    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && overlay.classList.contains('show')) saveCurrent();
-  });
-
-  let resizeTimer = null;
-  window.addEventListener('resize', () => {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(renderCharts, 160);
-  });
-
-  /* ==================== 初始化 ==================== */
-  updateYearNav();
-  requestAnimationFrame(() => {
-    renderAll();
-    setTimeout(renderCharts, 120);
-  });
-})();
-</script>
-</body>
-</html>
+    for (let d = 1; d <= daysInMonth; d++) {
+      const key = keyOf(y, m, d);
+      const
